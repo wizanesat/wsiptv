@@ -42,21 +42,27 @@ const firebaseConfig = {
         });
 
         // إنشاء طلب تجريبي للتأكد من الصلاحيات
-        window.createOrder = async () => {
-            try {
-                const docRef = await addDoc(collection(db, "orders"), {
-                    uid: auth.currentUser.uid,
-                    email: auth.currentUser.email,
-                    package: "باقة تجريبية",
-                    status: "pending",
-                    date: new Date()
-                });
-                alert("تم إنشاء الطلب في Firebase بنجاح! ID: " + docRef.id);
-            } catch (e) {
-                console.error(e);
-                alert("فشل إنشاء الطلب: " + e.message);
-            }
-        };
+     window.createOrder = async () => {
+    // تأكد من أن المستخدم مسجل فعلاً قبل محاولة الإرسال
+    if (!auth.currentUser) {
+        alert("خطأ: يجب تسجيل الدخول أولاً!");
+        return;
+    }
+
+    try {
+        const docRef = await addDoc(collection(db, "orders"), {
+            uid: auth.currentUser.uid, // هذا هو الحقل الأهم
+            email: auth.currentUser.email,
+            package: "باقة تجريبية",
+            status: "pending",
+            date: new Date()
+        });
+        alert("نجحنا أخيراً! رقم الطلب: " + docRef.id);
+    } catch (e) {
+        console.error("Firebase Error Details:", e);
+        alert("لا يزال هناك رفض: " + e.message);
+    }
+};
     </script>
 </body>
 </html>
