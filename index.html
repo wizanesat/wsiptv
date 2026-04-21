@@ -1,68 +1,70 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Wizanesat IPTV - Test</title>
+    <title>Wizanesat IPTV - Realtime Mode</title>
 </head>
 <body>
-    <button id="loginBtn">تسجيل الدخول</button>
-    <p id="status"></p>
-    <hr>
-    <button id="buyBtn" style="display:none" onclick="createOrder()">تجربة إنشاء طلب (بدون دفع حالياً)</button>
+    <button id="loginBtn">تسجيل الدخول بجوجل</button>
+    <div id="userArea" style="display:none">
+        <p id="userName"></p>
+        <button onclick="createOrder()">شراء باقة تجريبية</button>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // استيراد Realtime Database
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDVuqgo2Yvj-2-QGTcu3u4JeTKvIkzYAEw",
-  authDomain: "wsiptv-db.firebaseapp.com",
-  projectId: "wsiptv-db",
-  storageBucket: "wsiptv-db.firebasestorage.app",
-  messagingSenderId: "593647975188",
-  appId: "1:593647975188:web:9e9257cac0730eac22a001"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdoquNPVZIl8hvmCn8g6LM2DStQjD-8ac",
+            authDomain: "wizanesat-iptv-b7d4c.firebaseapp.com",
+            databaseURL: "https://wizanesat-iptv-b7d4c-default-rtdb.europe-west1.firebasedatabase.app/", // ستجد هذا الرابط في صفحة Database
+            projectId: "wizanesat-iptv-b7d4c",
+            storageBucket: "wizanesat-iptv-b7d4c.firebasestorage.app",
+            messagingSenderId: "102150577326",
+            appId: "1:102150577326:web:0f8a5391559acdade5e13f"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        const db = getDatabase(app); // تعريف قاعدة البيانات الجديدة
         const provider = new GoogleAuthProvider();
 
-        // تسجيل الدخول
+        // الدخول
         document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
 
         // مراقبة الحالة
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('status').innerText = "مرحباً: " + user.displayName;
-                document.getElementById('buyBtn').style.display = "block";
+                document.getElementById('loginBtn').style.display = "none";
+                document.getElementById('userArea').style.display = "block";
+                document.getElementById('userName').innerText = "مرحباً: " + user.displayName;
             }
         });
 
-        // إنشاء طلب تجريبي للتأكد من الصلاحيات
-     window.createOrder = async () => {
-    // تأكد من أن المستخدم مسجل فعلاً قبل محاولة الإرسال
-    if (!auth.currentUser) {
-        alert("خطأ: يجب تسجيل الدخول أولاً!");
-        return;
-    }
+        // إنشاء طلب في Realtime Database
+        window.createOrder = async () => {
+            const userId = auth.currentUser.uid;
+            // إنشاء مرجع جديد (مثل ID تلقائي)
+            const ordersRef = ref(db, 'orders/' + userId);
+            const newOrderRef = push(ordersRef); 
 
-    try {
-        const docRef = await addDoc(collection(db, "orders"), {
-            uid: auth.currentUser.uid, // هذا هو الحقل الأهم
-            email: auth.currentUser.email,
-            package: "باقة تجريبية",
-            status: "pending",
-            date: new Date()
-        });
-        alert("نجحنا أخيراً! رقم الطلب: " + docRef.id);
-    } catch (e) {
-        console.error("Firebase Error Details:", e);
-        alert("لا يزال هناك رفض: " + e.message);
-    }
-};
+            try {
+                await set(newOrderRef, {
+                    email: auth.currentUser.email,
+                    package: "باقة 3 أشهر",
+                    amount: 1200,
+                    status: "pending",
+                    timestamp: Date.now()
+                });
+                alert("نجحت العملية! تم تسجيل الطلب في Realtime Database");
+            } catch (error) {
+                console.error(error);
+                alert("فشل: " + error.message);
+            }
+        };
     </script>
 </body>
 </html>
