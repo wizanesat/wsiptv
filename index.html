@@ -1,1 +1,62 @@
 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Wizanesat IPTV - Test</title>
+</head>
+<body>
+    <button id="loginBtn">تسجيل الدخول</button>
+    <p id="status"></p>
+    <hr>
+    <button id="buyBtn" style="display:none" onclick="createOrder()">تجربة إنشاء طلب (بدون دفع حالياً)</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSy...", // مفتاحك هنا
+            authDomain: "wizanesat-iptv-b7d4c.firebaseapp.com",
+            projectId: "wizanesat-iptv-b7d4c",
+            storageBucket: "wizanesat-iptv-b7d4c.firebasestorage.app",
+            messagingSenderId: "102150577326",
+            appId: "1:102150577326:web:0f8a5391559acdade5e13f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // تسجيل الدخول
+        document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
+
+        // مراقبة الحالة
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('status').innerText = "مرحباً: " + user.displayName;
+                document.getElementById('buyBtn').style.display = "block";
+            }
+        });
+
+        // إنشاء طلب تجريبي للتأكد من الصلاحيات
+        window.createOrder = async () => {
+            try {
+                const docRef = await addDoc(collection(db, "orders"), {
+                    uid: auth.currentUser.uid,
+                    email: auth.currentUser.email,
+                    package: "باقة تجريبية",
+                    status: "pending",
+                    date: new Date()
+                });
+                alert("تم إنشاء الطلب في Firebase بنجاح! ID: " + docRef.id);
+            } catch (e) {
+                console.error(e);
+                alert("فشل إنشاء الطلب: " + e.message);
+            }
+        };
+    </script>
+</body>
+</html>
